@@ -89,10 +89,10 @@ public class RegistrationGUI extends JFrame {
             return;
         }
 
-        // Register user
-        User newUser = system.getUserManager().registerUser(username, password, email, userType);
+        // Register user - zmiana z boolean na User
+        boolean registrationSuccessful = system.getUserManager().registerUser(username, password, email, userType);
 
-        if (newUser != null) {
+        if (registrationSuccessful) {
             JOptionPane.showMessageDialog(this, "Rejestracja zakończona pomyślnie!", "Sukces", JOptionPane.INFORMATION_MESSAGE);
             backToLogin();
         } else {

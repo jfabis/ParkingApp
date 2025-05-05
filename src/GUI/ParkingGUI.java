@@ -311,7 +311,7 @@ public class ParkingGUI extends JFrame {
         outputArea.append("=== Zarządzanie użytkownikami ===\n");
         outputArea.append("Lista użytkowników:\n");
 
-        for (User user : system.getUserManager().getAllUsers()) {
+        for (User user : system.getUserManager().getUsers()) {
             outputArea.append("ID: " + user.getId() + ", Login: " + user.getUsername() +
                     ", Email: " + user.getEmail() + ", Typ: " + user.getUserType() + "\n");
         }
@@ -350,7 +350,7 @@ public class ParkingGUI extends JFrame {
     }
 
     private void logout() {
-        system.getUserManager().logout();
+        system.getUserManager().logout(currentUser);
         new LoginGUI(system);
         dispose(); // Close the current window
     }

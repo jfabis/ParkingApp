@@ -1,18 +1,28 @@
 package model;
 
-public class User {
+import java.io.Serializable;
+
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
     private int id;
     private String username;
     private String password;
     private String email;
     private String userType; // "client", "owner", "security", "admin", "maintenance"
 
+    // Główny konstruktor z wszystkimi parametrami
     public User(int id, String username, String password, String email, String userType) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.email = email;
         this.userType = userType;
+    }
+
+    // Dodatkowy konstruktor przyjmujący tylko 3 parametry
+    // Domyślnie ustawia id=0 i userType="client"
+    public User(String username, String password, String email) {
+        this(0, username, password, email, "client");
     }
 
     // Getters and setters
