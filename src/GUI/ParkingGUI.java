@@ -562,12 +562,6 @@ public class ParkingGUI extends JFrame {
         adminPanel.add(editButton);
         adminPanel.add(deleteButton);
 
-        // Dodaj panel do interfejsu - zakładamy, że masz jakiś kontener, do którego możesz dodać panel
-        // To jest przykład - musisz dostosować to do swojej aplikacji
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
-        contentPanel.add(adminPanel, BorderLayout.SOUTH);
-
         // Jeśli nie możesz dodać panelu do interfejsu, możesz utworzyć nowe okno dialogowe
         JDialog adminDialog = new JDialog(this, "Panel administracyjny", false);
         adminDialog.setLayout(new BorderLayout());
