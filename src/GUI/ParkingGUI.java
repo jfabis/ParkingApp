@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+import java.text.SimpleDateFormat;
+
 
 public class ParkingGUI extends JFrame {
     private SystemRezerwacji system;
@@ -315,10 +317,25 @@ public class ParkingGUI extends JFrame {
     }
 
     private void zarezerwuj() {
-        // Simple implementation for now
-        Rezerwacja r = system.createRezerwacja(currentUser.getId(), new Date());
-        outputArea.append("Dodano rezerwację: ID = " + r.idRezerwacji + "\n");
+        // Otwórz dialog wyboru miejsca parkingowego
+        ParkingSpotSelectionDialog dialog = new ParkingSpotSelectionDialog(this, system);
+        dialog.setVisible(true);
+
+        if (dialog.isConfirmed()) {
+            int selectedSpot = dialog.getSelectedSpot();
+
+            // Utwórz rezerwację z wybranym miejscem
+            Rezerwacja r = system.createRezerwacja(currentUser.getId(), new Date(), selectedSpot);
+
+            if (r != null) {
+                outputArea.append("Pomyślnie zarezerwowano miejsce nr " + selectedSpot +
+                        " (ID rezerwacji: " + r.idRezerwacji + ")\n");
+            } else {
+                outputArea.append("Błąd podczas tworzenia rezerwacji\n");
+            }
+        }
     }
+
 
     private void pokazMojeRezerwacje() {
         outputArea.setText("");
@@ -331,26 +348,26 @@ public class ParkingGUI extends JFrame {
         }
 
         for (Rezerwacja r : mojeRezerwacje) {
-            outputArea.append("ID: " + r.idRezerwacji + ", Data: " + r.data + ", Status: " + r.status + "\n");
+            outputArea.append("ID: " + r.idRezerwacji +
+                    ", Miejsce: " + r.miejsceParkingowe +
+                    ", Data: " + r.data +
+                    ", Status: " + r.status + "\n");
         }
     }
+
 
     private void anulujRezerwacje() {
         List<Rezerwacja> mojeRezerwacje = system.getRezerwacjeUzytkownika(currentUser.getId());
 
         if (mojeRezerwacje.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Nie masz żadnych aktywnych rezerwacji.",
-                    "Informacja",
-                    JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Nie masz żadnych aktywnych rezerwacji.", "Informacja", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Create a list of reservation IDs for selection
         String[] options = new String[mojeRezerwacje.size()];
         for (int i = 0; i < mojeRezerwacje.size(); i++) {
             Rezerwacja r = mojeRezerwacje.get(i);
-            options[i] = "ID: " + r.idRezerwacji + ", Data: " + r.data;
+            options[i] = "ID: " + r.idRezerwacji + ", Miejsce: " + r.getMiejsceParkingowe() + ", Data: " + r.data;
         }
 
         String selected = (String) JOptionPane.showInputDialog(this,
@@ -362,20 +379,59 @@ public class ParkingGUI extends JFrame {
                 options[0]);
 
         if (selected != null) {
-            // Extract ID from the selected string
             int id = Integer.parseInt(selected.substring(4, selected.indexOf(",")));
-            system.anulujRezerwacje(id);
-            outputArea.append("Anulowano rezerwację ID: " + id + "\n");
+
+            // Potwierdzenie anulowania
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Czy na pewno chcesz anulować rezerwację?\nUWAGA: Anulowanie spowoduje usunięcie płatności z historii!",
+                    "Potwierdź anulowanie",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                system.anulujRezerwacje(id);
+                outputArea.append("Anulowano rezerwację ID: " + id + " i usunięto z historii płatności\n");
+            }
         }
     }
+
     private void pokazHistorie() {
         outputArea.setText("");
-        outputArea.append("=== Historia i faktury ===\n");
-        outputArea.append("\nOstatnie transakcje:\n");
-        outputArea.append("- 2023-05-01: Rezerwacja #1234 - 50.00 PLN\n");
-        outputArea.append("- 2023-04-15: Rezerwacja #1122 - 75.00 PLN\n");
-        outputArea.append("- 2023-03-22: Rezerwacja #0987 - 120.00 PLN\n");
+        outputArea.append("=== Historia płatności i faktury ===\n\n");
+
+        List<Rezerwacja> historiaUzytkownika = system.getHistoriaRezerwacjiUzytkownika(currentUser.getId());
+
+        if (historiaUzytkownika.isEmpty()) {
+            outputArea.append("Brak historii płatności\n");
+            return;
+        }
+
+        double lacznaKwota = 0.0;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
+        outputArea.append("FAKTURY I PŁATNOŚCI:\n");
+        outputArea.append("=" + "=".repeat(60) + "\n\n");
+
+        for (Rezerwacja r : historiaUzytkownika) {
+            outputArea.append("FAKTURA NR: " + String.format("%06d", r.idRezerwacji) + "\n");
+            outputArea.append("Data płatności: " + dateFormat.format(r.getDataPlatnosci()) + "\n");
+            outputArea.append("Data rezerwacji: " + dateFormat.format(r.data) + "\n");
+            outputArea.append("Miejsce parkingowe: " + r.getMiejsceParkingowe() + "\n");
+            outputArea.append("Status: " + r.status + "\n");
+            outputArea.append("Kwota: " + String.format("%.2f", r.getCena()) + " PLN\n");
+            outputArea.append("-".repeat(40) + "\n\n");
+
+            lacznaKwota += r.getCena();
+        }
+
+        outputArea.append("PODSUMOWANIE:\n");
+        outputArea.append("Liczba transakcji: " + historiaUzytkownika.size() + "\n");
+        outputArea.append("Łączna kwota: " + String.format("%.2f", lacznaKwota) + " PLN\n\n");
+
+        // Dodaj przycisk do eksportu faktury
+        outputArea.append("Aby wyeksportować fakturę, skontaktuj się z administracją.\n");
     }
+
 
     private void ocenUsluge() {
         String[] options = {"1", "2", "3", "4", "5"};
